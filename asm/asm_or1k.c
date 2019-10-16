@@ -10,6 +10,7 @@ const int INSN_OPCODE_SHIFT = 26;
 typedef enum insn_type {
 	INSN_END = 0, /**< end of array indicator */
 	INSN_INVAL = 0, /**< invalid opcode */
+	INSN_X, /**< no operands */
 } insn_type_t;
 
 typedef struct {
@@ -19,8 +20,24 @@ typedef struct {
 } insn_t;
 
 insn_t insns[] = {
-	{},
+	[0x09] = {(0x09<<26), "l.rfe", INSN_X},
 };
+
+int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
+	char *name;
+	insn_type_t type = descr->type;
+
+	name = descr->name;
+
+	switch (type) {
+	case INSN_X:
+		*line = sdb_fmt("%s", name);
+		break;
+	default:
+		*line = sdb_fmt("invalid");
+	}
+	return 4;
+}
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ut32 insn, opcode;
@@ -57,8 +74,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		return op->size;
 	}
 
-	line = sdb_fmt("invalid");
-	r_strbuf_set(&op->buf_asm, line);
+	/* handle at least basic cases */
+	insn_to_str(a, &line, insn_descr, insn);
+	r_strbuf_set (&op->buf_asm, line);
 	return op->size;
 }
 
