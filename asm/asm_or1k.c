@@ -269,7 +269,11 @@ int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
 	} o = {};
 	char *name;
 	insn_type_t type = descr->type;
-	insn_type_descr_t *type_descr = &types[type];
+	insn_type_descr_t *type_descr = &types[INSN_X];
+
+	if (types + (sizeof(types)/sizeof(insn_type_descr_t)) > &types[type]) {
+		type_descr = &types[type];
+	}
 
 	o.rd = get_operand_value(insn, type_descr, INSN_OPER_D);
 	o.ra = get_operand_value(insn, type_descr, INSN_OPER_A);
