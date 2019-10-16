@@ -7,6 +7,13 @@
 const int INSN_OPCODE_MASK = 0b111111 << 26;
 const int INSN_OPCODE_SHIFT = 26;
 
+/** Empty mask for unused operands */
+const ut32 INSN_EMPTY_MASK = 0;
+const ut32 INSN_EMPTY_SHIFT = 0;
+
+/** Mask for N operand */
+const ut32 INSN_N_MASK = 0b11111111111111111111111111;
+
 /** Shift for B operand */
 const ut32 INSN_B_SHIFT = 11;
 /** Mask for B operand */
@@ -16,11 +23,13 @@ typedef enum insn_type {
 	INSN_END = 0, /**< end of array indicator */
 	INSN_INVAL = 0, /**< invalid opcode */
 	INSN_X, /**< no operands */
+	INSN_N, /**< 26-bit immediate */
 	INSN_B, /**< 5-bit source register */
 } insn_type_t;
 
 typedef enum {
 	INSN_OPER_B, /**< 5-bit source register */
+	INSN_OPER_N, /**< 26-bit immediate */
 	INSN_OPER_SIZE /**< number of operand types */
 } insn_oper_t;
 
@@ -47,6 +56,12 @@ insn_type_descr_t types[] = {
 		{
 		}
 	},
+	/* ------NNNNNNNNNNNNNNNNNNNNNNNNNN */
+	[INSN_N] = {INSN_N, "%s 0x%x",
+		{
+			[INSN_OPER_N] = {INSN_OPER_N, INSN_N_MASK, INSN_EMPTY_SHIFT},
+		}
+	},
 	/* ----------------BBBBB----------- */
 	[INSN_B] = {INSN_B, "%s r%d",
 		{
@@ -56,9 +71,33 @@ insn_type_descr_t types[] = {
 };
 
 insn_t insns[] = {
+	[0x00] = {(0x00<<26), "l.j", INSN_N},
 	[0x09] = {(0x09<<26), "l.rfe", INSN_X},
 	[0x11] = {(0x11<<26), "l.jr", INSN_B},
 };
+
+/**
+ * \brief Performs sign extension of number
+ *
+ * \param number number to extend
+ * \param mask mask under which number is placed
+ *
+ * \return sign-extended number
+ *
+ * If mask does not begin on the lsb, space on the right will also be filled with ones
+ *
+ */
+static ut32 sign_extend(ut32 number, ut32 mask) {
+	/* xor of mask with itself shifted left detects msb of mask and msb of space
+	 * on the right. And discards the latter */
+	ut32 first_bit = (mask ^ (mask >> 1)) & mask;
+	/* if first bit is set */
+	if (number & first_bit) {
+		/* set every bit outside mask */
+		number |= ~mask;
+	}
+	return number;
+}
 
 static inline ut32 get_operand_mask(insn_type_descr_t *type_descr, insn_oper_t operand) {
 	return type_descr->operands[operand].mask;
@@ -90,12 +129,17 @@ int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
 	insn_type_descr_t *type_descr = &types[type];
 
 	o.rb = get_operand_value(insn, type_descr, INSN_OPER_B);
+	o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 
 	name = descr->name;
 
 	switch (type) {
 	case INSN_X:
 		*line = sdb_fmt(type_descr->format, name);
+		break;
+	case INSN_N:
+		*line = sdb_fmt(type_descr->format, name,
+				(sign_extend(o.n, type_descr->operands[INSN_OPER_N].mask) << 2) + a->pc);
 		break;
 	case INSN_B:
 		*line = sdb_fmt(type_descr->format, name, o.rb);
