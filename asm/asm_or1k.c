@@ -74,10 +74,22 @@ static inline ut32 get_operand_value(ut32 insn, insn_type_descr_t *type_descr, i
 
 
 int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
+	struct {
+	ut32 rd;
+	ut32 ra;
+	ut32 rb;
+	ut32 n;
+	ut32 k1;
+	ut32 k2;
+	ut32 k;
+	ut32 i;
+	ut32 l;
+	} o = {};
 	char *name;
 	insn_type_t type = descr->type;
 	insn_type_descr_t *type_descr = &types[type];
-	ut32 rb = get_operand_value(insn, type_descr, INSN_OPER_B);
+
+	o.rb = get_operand_value(insn, type_descr, INSN_OPER_B);
 
 	name = descr->name;
 
@@ -86,7 +98,7 @@ int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
 		*line = sdb_fmt(type_descr->format, name);
 		break;
 	case INSN_B:
-		*line = sdb_fmt(type_descr->format, name, rb);
+		*line = sdb_fmt(type_descr->format, name, o.rb);
 	break;
 	default:
 		*line = sdb_fmt("invalid");
