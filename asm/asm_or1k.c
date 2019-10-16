@@ -7,6 +7,11 @@
 const int INSN_OPCODE_MASK = 0b111111 << 26;
 const int INSN_OPCODE_SHIFT = 26;
 
+typedef enum insn_type {
+	INSN_END = 0, /**< end of array indicator */
+	INSN_INVAL = 0, /**< invalid opcode */
+} insn_type_t;
+
 typedef struct {
 	ut32 opcode;
 	char *name;
@@ -14,12 +19,15 @@ typedef struct {
 } insn_t;
 
 insn_t insns[] = {
+	{},
 };
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ut32 insn, opcode;
 	ut8 opcode_idx;
 	char *line = NULL;
+	insn_t *insn_descr;
+
 	op->size = -1;
 
 	if (len < 4) {
@@ -36,6 +44,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* make sure instruction descriptor table is not overflowed */
 	if (opcode_idx >= sizeof(insns)/sizeof(insn_t)) {
+		line = sdb_fmt("invalid");
+		r_strbuf_set (&op->buf_asm, line);
+		return op->size;
+	}
+
+	/* if instruction is marked as invalid finish processing now */
+	insn_descr = &insns[opcode_idx];
+	if (insn_descr->type == INSN_INVAL) {
 		line = sdb_fmt("invalid");
 		r_strbuf_set (&op->buf_asm, line);
 		return op->size;
