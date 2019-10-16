@@ -133,6 +133,12 @@ int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
 
 	name = descr->name;
 
+	if (name == NULL || type_descr->format == NULL) {
+		/* this should not happen, give up */
+		*line = sdb_fmt("invalid");
+		return 4;
+	}
+
 	switch (type) {
 	case INSN_X:
 		*line = sdb_fmt(type_descr->format, name);
