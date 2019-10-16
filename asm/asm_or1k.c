@@ -3,9 +3,29 @@
 #include <r_asm.h>
 #include <r_lib.h>
 
+/** Default mask for opcode */
+const int INSN_OPCODE_MASK = 0b111111 << 26;
+const int INSN_OPCODE_SHIFT = 26;
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	char *line = sdb_fmt("invalid");
+	ut32 insn, opcode;
+	ut8 opcode_idx;
+	char *line = NULL;
 	op->size = -1;
+
+	if (len < 4) {
+		line = sdb_fmt("invalid");
+		r_strbuf_set (&op->buf_asm, line);
+		return op->size;
+	}
+
+	/* read instruction and basic opcode value */
+	insn = r_read_be32(buf);
+	op->size = 4;
+	opcode = (insn & INSN_OPCODE_MASK);
+	opcode_idx = opcode >> INSN_OPCODE_SHIFT;
+
+	line = sdb_fmt("unk%x 0", opcode_idx);
 	r_strbuf_set(&op->buf_asm, line);
 	return op->size;
 }
