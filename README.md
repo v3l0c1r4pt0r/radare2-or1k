@@ -8,7 +8,7 @@ If you already have radare2 installed, it should be enough to simply type
 `make`. Two .so files should appear. You can load them into radare2 with
 following commands:
 ```
-L ./asm_or1k.so
-L ./anal_or1k.so
+L asm/asm_or1k.so
+L anal/anal_or1k.so
 ```
 provided, you are in root of this repository.
