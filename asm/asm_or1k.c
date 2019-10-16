@@ -7,6 +7,15 @@
 const int INSN_OPCODE_MASK = 0b111111 << 26;
 const int INSN_OPCODE_SHIFT = 26;
 
+typedef struct {
+	ut32 opcode;
+	char *name;
+	int type;
+} insn_t;
+
+insn_t insns[] = {
+};
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ut32 insn, opcode;
 	ut8 opcode_idx;
@@ -25,7 +34,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	opcode = (insn & INSN_OPCODE_MASK);
 	opcode_idx = opcode >> INSN_OPCODE_SHIFT;
 
-	line = sdb_fmt("unk%x 0", opcode_idx);
+	/* make sure instruction descriptor table is not overflowed */
+	if (opcode_idx >= sizeof(insns)/sizeof(insn_t)) {
+		line = sdb_fmt("invalid");
+		r_strbuf_set (&op->buf_asm, line);
+		return op->size;
+	}
+
+	line = sdb_fmt("invalid");
 	r_strbuf_set(&op->buf_asm, line);
 	return op->size;
 }
