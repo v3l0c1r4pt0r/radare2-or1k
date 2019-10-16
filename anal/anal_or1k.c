@@ -3,7 +3,7 @@
 #include <r_anal.h>
 #include <r_lib.h>
 
-static int or1k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
+static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_strbuf_init (&op->esil);
 	op->size = 4;
 	return op->size;
