@@ -254,6 +254,13 @@ static inline ut32 get_operand_value(ut32 insn, insn_type_descr_t *type_descr, i
 	return (insn & get_operand_mask(type_descr, operand)) >> get_operand_shift(type_descr, operand);
 }
 
+static inline int has_type_descriptor(insn_type_t type) {
+	return types + (sizeof(types)/sizeof(insn_type_descr_t)) > &types[type];
+}
+
+static inline int is_type_descriptor_defined(insn_type_t type) {
+	return types[type].type == type;
+}
 
 int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
 	struct {
@@ -271,7 +278,7 @@ int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
 	insn_type_t type = descr->type;
 	insn_type_descr_t *type_descr = &types[INSN_X];
 
-	if (types + (sizeof(types)/sizeof(insn_type_descr_t)) > &types[type]) {
+	if (has_type_descriptor(type) && is_type_descriptor_defined(type)) {
 		type_descr = &types[type];
 	}
 
