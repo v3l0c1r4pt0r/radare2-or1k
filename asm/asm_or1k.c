@@ -52,6 +52,7 @@ typedef enum insn_type {
 	INSN_X, /**< no operands */
 	INSN_N, /**< 26-bit immediate */
 	INSN_DN, /**< 5-bit destination register, then 26-bit immediate */
+	INSN_K, /**< 16-bit immediate */
 	INSN_B, /**< 5-bit source register */
 	INSN_AI, /**< 5-bit source register, then 16-bit immediate */
 	INSN_DAI, /**< 5-bit destination register, 5-bit source register, then 16-bit
@@ -93,6 +94,14 @@ typedef struct {
 	ut32 opcode;
 	char *name;
 	int type;
+	int opcode_mask;
+} insn_extra_t;
+
+typedef struct {
+	ut32 opcode;
+	char *name;
+	int type;
+	insn_extra_t *extra;
 } insn_t;
 
 insn_type_descr_t types[] = {
@@ -122,6 +131,12 @@ insn_type_descr_t types[] = {
 	[INSN_N] = {INSN_N, "%s 0x%x",
 		{
 			[INSN_OPER_N] = {INSN_OPER_N, INSN_N_MASK, INSN_EMPTY_SHIFT},
+		}
+	},
+	/* ----------------KKKKKKKKKKKKKKKK */
+	[INSN_K] = {INSN_K, "%s 0x%x",
+		{
+			[INSN_OPER_K] = {INSN_OPER_K, INSN_K_MASK, INSN_EMPTY_SHIFT},
 		}
 	},
 	[INSN_DN] = {INSN_DN, "%s r%d, 0x%x",
@@ -161,12 +176,18 @@ insn_type_descr_t types[] = {
 	},
 };
 
+insn_extra_t extra_0x5[] = {
+	{(0x05<<26)|(0b01<<24), "l.nop", INSN_K, INSN_OPCODE_MASK | (0b11 << 24)},
+	{}
+};
+
 insn_t insns[] = {
 	[0x00] = {(0x00<<26), "l.j", INSN_N},
 	[0x01] = {(0x01<<26), "l.jal", INSN_N},
 	[0x02] = {(0x02<<26), "l.adrp", INSN_DN},
 	[0x03] = {(0x03<<26), "l.bnf", INSN_N},
 	[0x04] = {(0x04<<26), "l.bf", INSN_N},
+	[0x05] = {(0x05<<26), NULL, INSN_X, extra_0x5},
 	[0x07] = {(0x07<<26)},
 	[0x09] = {(0x09<<26), "l.rfe", INSN_X},
 	[0x0a] = {(0x0a<<26), "lv.ext0a", INSN_X}, /* TODO: implement */
@@ -262,7 +283,17 @@ static inline int is_type_descriptor_defined(insn_type_t type) {
 	return types[type].type == type;
 }
 
-int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
+static inline insn_type_t type_of_opcode(insn_t *descr, insn_extra_t *extra_descr) {
+	r_return_val_if_fail (descr, INSN_END);
+
+	if (extra_descr == NULL) {
+		return descr->type;
+	} else {
+		return extra_descr->type;
+	}
+}
+
+int insn_to_str(RAsm *a, char **line, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct {
 	ut32 rd;
 	ut32 ra;
@@ -275,7 +306,7 @@ int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
 	ut32 l;
 	} o = {};
 	char *name;
-	insn_type_t type = descr->type;
+	insn_type_t type = type_of_opcode(descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
 
 	/* only use type descriptor if it has some useful data */
@@ -292,7 +323,7 @@ int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
 	o.k = get_operand_value(insn, type_descr, INSN_OPER_K);
 	o.i = get_operand_value(insn, type_descr, INSN_OPER_I);
 
-	name = descr->name;
+	name = (extra == NULL) ? descr->name : extra->name;
 
 	if (name == NULL || type_descr->format == NULL) {
 		/* this should not happen, give up */
@@ -307,6 +338,9 @@ int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
 	case INSN_N:
 		*line = sdb_fmt(type_descr->format, name,
 				(sign_extend(o.n, type_descr->operands[INSN_OPER_N].mask) << 2) + a->pc);
+		break;
+	case INSN_K:
+		*line = sdb_fmt(type_descr->format, name, o.k);
 		break;
 	case INSN_DN:
 		*line = sdb_fmt(type_descr->format, name, o.rd, o.n);
@@ -337,11 +371,28 @@ int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
 	return 4;
 }
 
+static insn_extra_t *find_extra_descriptor(insn_extra_t *extra_descr, ut32 insn) {
+	ut32 opcode;
+	while (extra_descr->type != INSN_END) {
+		opcode = (insn & extra_descr->opcode_mask);
+		if (extra_descr->opcode == opcode) {
+			break;
+		}
+		extra_descr++;
+	}
+	if (extra_descr->type != INSN_END) {
+		return extra_descr;
+	}  else {
+		return NULL;
+	}
+}
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ut32 insn, opcode;
 	ut8 opcode_idx;
 	char *line = NULL;
 	insn_t *insn_descr;
+	insn_extra_t *extra_descr;
 
 	op->size = -1;
 
@@ -372,9 +423,23 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		return op->size;
 	}
 
-	/* handle at least basic cases */
-	insn_to_str(a, &line, insn_descr, insn);
-	r_strbuf_set (&op->buf_asm, line);
+	/* if name is null, but extra is present, it means 6 most significant bits
+	 * are not enough to decode instruction */
+	if ((insn_descr->name == NULL) && (insn_descr->extra != NULL)) {
+		if ((extra_descr = find_extra_descriptor(insn_descr->extra, insn)) != NULL) {
+			insn_to_str(a, &line, insn_descr, extra_descr, insn);
+		}
+		else {
+			line = sdb_fmt("invalid");
+		}
+		r_strbuf_set (&op->buf_asm, line);
+	}
+	else {
+		/* otherwise basic descriptor is enough */
+		insn_to_str(a, &line, insn_descr, NULL, insn);
+		r_strbuf_set (&op->buf_asm, line);
+	}
+
 	return op->size;
 }
 
