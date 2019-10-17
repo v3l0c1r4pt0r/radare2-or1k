@@ -278,6 +278,7 @@ int insn_to_str(RAsm *a, char **line, insn_t *descr, ut32 insn) {
 	insn_type_t type = descr->type;
 	insn_type_descr_t *type_descr = &types[INSN_X];
 
+	/* only use type descriptor if it has some useful data */
 	if (has_type_descriptor(type) && is_type_descriptor_defined(type)) {
 		type_descr = &types[type];
 	}
