@@ -3,6 +3,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 #include <r_lib.h>
+#include <or1k_disas.h>
 
 static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_strbuf_init (&op->esil);

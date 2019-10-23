@@ -5,6 +5,7 @@ LDFLAGS=-shared $(shell pkg-config --libs r_anal)
 OBJS=$(NAME).o
 SO_EXT=$(shell uname|grep -q Darwin && echo dylib || echo so)
 LIB=$(NAME).$(SO_EXT)
+CFLAGS+=-I../asm
 
 all: $(LIB)
 
