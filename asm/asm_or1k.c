@@ -57,7 +57,7 @@ static inline insn_type_t type_of_opcode(insn_t *descr, insn_extra_t *extra_desc
 	}
 }
 
-int insn_to_str(RAsm *a, char **line, insn_t *descr, insn_extra_t *extra, ut32 insn) {
+static int insn_to_str(RAsm *a, char **line, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct {
 	ut32 rd;
 	ut32 ra;
