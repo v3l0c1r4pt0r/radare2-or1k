@@ -40,7 +40,7 @@ static inline ut32 get_operand_value(ut32 insn, insn_type_descr_t *type_descr, i
 }
 
 static inline int has_type_descriptor(insn_type_t type) {
-	return types + (sizeof(types)/sizeof(insn_type_descr_t)) > &types[type];
+	return types + types_count > &types[type];
 }
 
 static inline int is_type_descriptor_defined(insn_type_t type) {
@@ -192,7 +192,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	opcode_idx = opcode >> INSN_OPCODE_SHIFT;
 
 	/* make sure instruction descriptor table is not overflowed */
-	if (opcode_idx >= sizeof(insns)/sizeof(insn_t)) {
+	if (opcode_idx >= insns_count) {
 		line = sdb_fmt("invalid");
 		r_strbuf_set (&op->buf_asm, line);
 		return op->size;
