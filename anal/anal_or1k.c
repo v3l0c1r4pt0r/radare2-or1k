@@ -6,6 +6,11 @@
 #include <or1k_disas.h>
 
 static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
+	if (extra == NULL) {
+		op->type = descr->insn_type;
+	} else {
+		op->type = extra->insn_type;
+	}
 	return 4;
 }
 

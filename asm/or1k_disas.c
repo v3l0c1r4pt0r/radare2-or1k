@@ -1,5 +1,6 @@
 /* radare2 - LGPL - Copyright 2019 - v3l0c1r4pt0r */
 
+#include <r_anal.h>
 #include <or1k_disas.h>
 
 /** Default mask for opcode */
@@ -168,7 +169,7 @@ insn_type_descr_t types[] = {
 size_t types_count = sizeof(types) / sizeof(insn_type_descr_t);
 
 insn_extra_t extra_0x5[] = {
-	{(0x05<<26)|(0b01<<24), "l.nop", INSN_K, INSN_OPCODE_MASK | (0b11 << 24)},
+	{(0x05<<26)|(0b01<<24), "l.nop", INSN_K, INSN_OPCODE_MASK | (0b11 << 24), R_ANAL_OP_TYPE_NOP},
 	{}
 };
 
@@ -309,15 +310,15 @@ insn_extra_t extra_0x39[] = {
 };
 
 insn_t insns[] = {
-	[0x00] = {(0x00<<26), "l.j", INSN_N},
+	[0x00] = {(0x00<<26), "l.j", INSN_N, R_ANAL_OP_TYPE_JMP},
 	[0x01] = {(0x01<<26), "l.jal", INSN_N},
 	[0x02] = {(0x02<<26), "l.adrp", INSN_DN},
 	[0x03] = {(0x03<<26), "l.bnf", INSN_N},
 	[0x04] = {(0x04<<26), "l.bf", INSN_N},
-	[0x05] = {(0x05<<26), NULL, INSN_X, extra_0x5},
-	[0x06] = {(0x06<<26), NULL, INSN_X, extra_0x6},
+	[0x05] = {(0x05<<26), NULL, INSN_X, R_ANAL_OP_TYPE_NULL, extra_0x5},
+	[0x06] = {(0x06<<26), NULL, INSN_X, R_ANAL_OP_TYPE_NULL, extra_0x6},
 	[0x07] = {(0x07<<26)},
-	[0x08] = {(0x08<<26), NULL, INSN_X, extra_0x8},
+	[0x08] = {(0x08<<26), NULL, INSN_X, R_ANAL_OP_TYPE_NULL, extra_0x8},
 	[0x09] = {(0x09<<26), "l.rfe", INSN_X},
 	[0x0a] = {(0x0a<<26), "lv.ext0a", INSN_X}, /* TODO: implement */
 	[0x0b] = {(0x0b<<26)},
@@ -355,18 +356,18 @@ insn_t insns[] = {
 	[0x2b] = {(0x2b<<26), "l.xori", INSN_DAI},
 	[0x2c] = {(0x2c<<26), "l.muli", INSN_DAI},
 	[0x2d] = {(0x2d<<26), "l.mfspr", INSN_DAK},
-	[0x2e] = {(0x2e<<26), NULL, INSN_X, extra_0x2e},
-	[0x2f] = {(0x2f<<26), NULL, INSN_X, extra_0x2f},
+	[0x2e] = {(0x2e<<26), NULL, INSN_X, R_ANAL_OP_TYPE_NULL, extra_0x2e},
+	[0x2f] = {(0x2f<<26), NULL, INSN_X, R_ANAL_OP_TYPE_NULL, extra_0x2f},
 	[0x30] = {(0x30<<26), "l.mtspr", INSN_KABK},
-	[0x31] = {(0x31<<26), NULL, INSN_X, extra_0x31},
-	[0x32] = {(0x32<<26), NULL, INSN_X, extra_0x32},
+	[0x31] = {(0x31<<26), NULL, INSN_X, R_ANAL_OP_TYPE_NULL, extra_0x31},
+	[0x32] = {(0x32<<26), NULL, INSN_X, R_ANAL_OP_TYPE_NULL, extra_0x32},
 	[0x33] = {(0x33<<26), "l.swa", INSN_IABI},
 	[0x34] = {(0x34<<26)},
 	[0x35] = {(0x35<<26), "l.sw", INSN_IABI},
 	[0x36] = {(0x36<<26), "l.sb", INSN_IABI},
 	[0x37] = {(0x37<<26), "l.sh", INSN_IABI},
-	[0x38] = {(0x38<<26), NULL, INSN_X, extra_0x38},
-	[0x39] = {(0x39<<26), NULL, INSN_X, extra_0x39},
+	[0x38] = {(0x38<<26), NULL, INSN_X, R_ANAL_OP_TYPE_NULL, extra_0x38},
+	[0x39] = {(0x39<<26), NULL, INSN_X, R_ANAL_OP_TYPE_NULL, extra_0x39},
 	[0x3a] = {(0x3a<<26)},
 	[0x3b] = {(0x3b<<26)},
 	[0x3c] = {(0x3c<<26), "l.cust5", INSN_X},
