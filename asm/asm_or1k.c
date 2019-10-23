@@ -154,22 +154,6 @@ int insn_to_str(RAsm *a, char **line, insn_t *descr, insn_extra_t *extra, ut32 i
 	return 4;
 }
 
-static insn_extra_t *find_extra_descriptor(insn_extra_t *extra_descr, ut32 insn) {
-	ut32 opcode;
-	while (extra_descr->type != INSN_END) {
-		opcode = (insn & extra_descr->opcode_mask);
-		if (extra_descr->opcode == opcode) {
-			break;
-		}
-		extra_descr++;
-	}
-	if (extra_descr->type != INSN_END) {
-		return extra_descr;
-	}  else {
-		return NULL;
-	}
-}
-
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ut32 insn, opcode;
 	ut8 opcode_idx;

@@ -134,4 +134,6 @@ extern insn_extra_t extra_0x39[];
 extern insn_t insns[];
 extern size_t insns_count;
 
+insn_extra_t *find_extra_descriptor(insn_extra_t *extra_descr, ut32 insn);
+
 #endif /* OR1K_DISAS_H */

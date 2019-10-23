@@ -376,3 +376,19 @@ insn_t insns[] = {
 };
 
 size_t insns_count = sizeof(insns) / sizeof(insn_t);
+
+insn_extra_t *find_extra_descriptor(insn_extra_t *extra_descr, ut32 insn) {
+	ut32 opcode;
+	while (extra_descr->type != INSN_END) {
+		opcode = (insn & extra_descr->opcode_mask);
+		if (extra_descr->opcode == opcode) {
+			break;
+		}
+		extra_descr++;
+	}
+	if (extra_descr->type != INSN_END) {
+		return extra_descr;
+	}  else {
+		return NULL;
+	}
+}
