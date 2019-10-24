@@ -5,11 +5,74 @@
 #include <r_lib.h>
 #include <or1k_disas.h>
 
+ut32 cpu[32] = {0}; /* register contents */
+ut32 cpu_enable; /* allows to treat only registers with known value as valid */
+
 static int insn_to_op(RAnal *a, RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
+	struct {
+	ut32 rd;
+	ut32 ra;
+	ut32 rb;
+	ut32 n;
+	ut32 k1;
+	ut32 k2;
+	ut32 k;
+	ut32 i;
+	ut32 l;
+	} o = {};
+	insn_type_t type = type_of_opcode(descr, extra);
+	insn_type_descr_t *type_descr = &types[INSN_X];
+
+	/* only use type descriptor if it has some useful data */
+	if (has_type_descriptor(type) && is_type_descriptor_defined(type)) {
+		type_descr = &types[type];
+	}
+
 	if (extra == NULL) {
 		op->type = descr->insn_type;
 	} else {
 		op->type = extra->insn_type;
+	}
+
+	switch ((insn & INSN_OPCODE_MASK) >> INSN_OPCODE_SHIFT) {
+	case 0x00: /* l.j */
+		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
+		op->jump = (o.n << 2) + addr;
+		op->delay = 1;
+		break;
+	case 0x11: /* l.jr */
+		o.rb = get_operand_value(insn, type_descr, INSN_OPER_B);
+		if (cpu_enable & (1 << o.rb)) {
+			op->jump = cpu[o.rb];
+		}
+		break;
+	case 0x06: /* extended */
+		switch (insn & (1 << 16)) {
+		case 0: /* l.movhi */
+			o.rd = get_operand_value(insn, type_descr, INSN_OPER_D);
+			o.k = get_operand_value(insn, type_descr, INSN_OPER_K);
+			cpu[o.rd] = o.k << 16;
+			cpu_enable |= (1 << o.rd);
+			break;
+		case 1: /* l.macrc */
+			break;
+		}
+		break;
+	case 0x2a: /* l.ori */
+		o.rd = get_operand_value(insn, type_descr, INSN_OPER_D);
+		o.ra = get_operand_value(insn, type_descr, INSN_OPER_A);
+		o.i = get_operand_value(insn, type_descr, INSN_OPER_I);
+		if (cpu_enable & (1 << o.ra)) {
+			cpu[o.rd] = cpu[o.ra] | o.i;
+			cpu_enable |= (1 << o.rd);
+			op->val = cpu[o.rd];
+		}
+		break;
+	}
+
+	/* temporary solution to prevent using wrong register values */
+	if (op->type & R_ANAL_OP_TYPE_JMP == R_ANAL_OP_TYPE_JMP) {
+		cpu_enable = 0;
 	}
 	return 4;
 }
