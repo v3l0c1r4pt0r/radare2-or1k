@@ -27,36 +27,6 @@ static ut32 sign_extend(ut32 number, ut32 mask) {
 	return number;
 }
 
-static inline ut32 get_operand_mask(insn_type_descr_t *type_descr, insn_oper_t operand) {
-	return type_descr->operands[operand].mask;
-}
-
-static inline ut32 get_operand_shift(insn_type_descr_t *type_descr, insn_oper_t operand) {
-	return type_descr->operands[operand].shift;
-}
-
-static inline ut32 get_operand_value(ut32 insn, insn_type_descr_t *type_descr, insn_oper_t operand) {
-	return (insn & get_operand_mask(type_descr, operand)) >> get_operand_shift(type_descr, operand);
-}
-
-static inline int has_type_descriptor(insn_type_t type) {
-	return types + types_count > &types[type];
-}
-
-static inline int is_type_descriptor_defined(insn_type_t type) {
-	return types[type].type == type;
-}
-
-static inline insn_type_t type_of_opcode(insn_t *descr, insn_extra_t *extra_descr) {
-	r_return_val_if_fail (descr, INSN_END);
-
-	if (extra_descr == NULL) {
-		return descr->type;
-	} else {
-		return extra_descr->type;
-	}
-}
-
 static int insn_to_str(RAsm *a, char **line, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct {
 	ut32 rd;
